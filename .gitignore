@@ -1,0 +1,7 @@
+logs/
+__pycache__/
+*.pyc
+detector/config.yaml
+detector/config.yaml
+venv/
+detector/config.yaml.bak

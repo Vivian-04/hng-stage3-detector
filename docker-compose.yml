@@ -1,0 +1,62 @@
+# HNG Stage 3 - Nextcloud + Nginx + shared log volume
+# The detector daemon (added later) will mount HNG-nginx-logs read-only.
+
+services:
+
+  # ===================================================
+  # Nextcloud - using the prescribed image, DO NOT MODIFY
+  # ===================================================
+  nextcloud:
+    image: kefaslungu/hng-nextcloud:latest
+    container_name: hng-nextcloud
+    restart: unless-stopped
+    networks:
+      - hng-net
+    expose:
+      - "80"
+    volumes:
+      - nextcloud-data:/var/www/html
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 256M
+
+  # ===================================================
+  # Nginx - reverse proxy with JSON access logs
+  # ===================================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: hng-nginx
+    restart: unless-stopped
+    networks:
+      - hng-net
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - HNG-nginx-logs:/var/log/nginx
+    depends_on:
+      - nextcloud
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+
+networks:
+  hng-net:
+    name: hng-net
+    driver: bridge
+
+volumes:
+  # Required by task: named volume HNG-nginx-logs
+  # nginx writes here, detector mounts read-only
+  HNG-nginx-logs:
+    name: HNG-nginx-logs
+
+  # Persistent Nextcloud data
+  nextcloud-data:
+    name: nextcloud-data

@@ -1,0 +1,114 @@
+# HNG Stage 3 Anomaly Detector - Configuration
+# All thresholds live here. NO hardcoding in Python code.
+
+# ===========================================
+# Log monitoring
+# ===========================================
+log:
+  # Path to nginx JSON access log (mounted read-only from HNG-nginx-logs)
+  access_log_path: /var/log/nginx/hng-access.log
+
+  # How often to check for new lines if the file is idle (seconds)
+  poll_interval: 0.1
+
+  # How often to re-check if the log file was rotated (seconds)
+  rotation_check_interval: 5
+
+# ===========================================
+# Sliding window
+# ===========================================
+window:
+  # Window size in seconds for rate calculations
+  size_seconds: 60
+
+  # Max number of unique IPs to track (prevents memory bloat under attack)
+  max_tracked_ips: 10000
+
+# ===========================================
+# Rolling baseline
+# ===========================================
+baseline:
+  # Window size in seconds for baseline calculation (30 minutes)
+  window_seconds: 1800
+
+  # How often to recalculate the baseline (seconds)
+  recalc_interval: 60
+
+  # Minimum data points needed before baseline is "ready"
+  min_samples: 60
+
+  # Floor values - if calculated values are below these, use these instead.
+  # Prevents division-by-tiny-numbers errors when traffic is sparse.
+  floor_mean: 1.0
+  floor_stddev: 1.0
+
+  # Per-hour slot tracking - keep separate baselines per hour of day
+  use_hourly_slots: true
+
+# ===========================================
+# Anomaly detection thresholds
+# ===========================================
+detection:
+  # Z-score threshold for flagging anomalies
+  z_score_threshold: 3.0
+
+  # Multiplier rule - flag if rate > N * baseline mean
+  rate_multiplier_threshold: 5.0
+
+  # When error rate (4xx/5xx) is N x baseline, tighten thresholds for that IP
+  error_surge_multiplier: 3.0
+  tightened_z_threshold: 2.0
+  tightened_rate_multiplier: 3.0
+
+# ===========================================
+# Blocking & unbanning
+# ===========================================
+blocker:
+  # iptables chain to use (INPUT for incoming traffic)
+  iptables_chain: INPUT
+
+  # Auto-unban backoff schedule (in seconds)
+  # First ban: 10 minutes, then 30 minutes, then 2 hours, then permanent.
+  unban_schedule_seconds:
+    - 600     # 10 minutes
+    - 1800    # 30 minutes
+    - 7200    # 2 hours
+
+  # If an IP gets banned more times than the schedule above, ban permanently.
+  permanent_after_offense: 4
+
+  # How often the unbanner checks for IPs to release (seconds)
+  unbanner_interval: 30
+
+# ===========================================
+# Slack notifications
+# ===========================================
+slack:
+  # Webhook URL
+  webhook_url: "YOUR_SLACK_WEBHOOK_URL
+
+  # Optional: customize the appearance
+  username: "HNG-Detector"
+  icon_emoji: ":shield:"
+
+  # If True, queue alerts and dispatch async (won't block detection)
+  async_dispatch: true
+
+# ===========================================
+# Dashboard (web UI)
+# ===========================================
+dashboard:
+  host: "0.0.0.0"
+  port: 8080
+
+  # Refresh interval in milliseconds (≤ 3000 ms required by task)
+  refresh_ms: 2000
+
+  # How many top IPs to show
+  top_ips_count: 10
+
+# ===========================================
+# Audit log
+# ===========================================
+audit:
+  log_path: /var/log/detector/audit.log
