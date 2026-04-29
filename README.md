@@ -78,7 +78,7 @@ sudo nohup python3 detector/main.py > logs/output.log 2>&1 &
 ```
 
 ### 8. View the dashboard
-Open http://13.63.158.14:8080 in your browser.
+Open http://your-server-ip:8080 in your browser.
 
 ## Repository Structure
 detector/
